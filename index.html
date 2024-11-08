@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RiseWise - Sleep Routine Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #1a1a2e;
+            color: #e6e6e6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .chat-container {
+            max-width: 800px;
+            margin: 0 auto;
+            width: 100%;
+            background-color: #16213e;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            height: 90vh;
+        }
+
+        .chat-header {
+            background-color: #0f3460;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .chat-header h1 {
+            font-size: 24px;
+            color: #e94560;
+            margin-bottom: 10px;
+        }
+
+        .chat-body {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            max-width: 80%;
+            padding: 12px 15px;
+            border-radius: 15px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+
+        .user-message {
+            background-color: #e94560;
+            margin-left: auto;
+            border-radius: 15px 15px 0 15px;
+        }
+
+        .bot-message {
+            background-color: #0f3460;
+            margin-right: auto;
+            border-radius: 15px 15px 15px 0;
+        }
+
+        .input-area {
+            padding: 20px;
+            background-color: #16213e;
+            display: flex;
+            gap: 10px;
+        }
+
+        input {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background-color: #1a1a2e;
+            color: #e6e6e6;
+            font-size: 16px;
+        }
+
+        button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            background-color: #e94560;
+            color: white;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #16213e;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #0f3460;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1>🌙 RiseWise Sleep Assistant</h1>
+            <p>Your personal sleep routine advisor</p>
+        </div>
+        <div class="chat-body" id="chatBody"></div>
+        <div class="input-area">
+            <input type="text" id="userInput" placeholder="Type your message here..." onkeypress="if(event.key === 'Enter') sendMessage()">
+            <button onclick="sendMessage()">Send 📤</button>
+        </div>
+    </div>
+
+    <script>
+        const botResponses = {
+            teen: {
+                keywords: ["teen", "teenager", "high school", "highschool", "freshman", "sophomore", "13", "14", "15", "16", "17"],
+                response: `✨ Teen Sleep Guide (Fr fr no cap):
+
+• Bedtime: 9:00 PM - 10:00 PM
+• Wake time: 6:30 AM - 7:30 AM
+• Total sleep needed: 8-10 hours
+
+Evening Routine:
+8:00 PM - Put that phone down bestie 📱
+8:30 PM - Vibe check/stretch session 🧘‍♂️
+9:00 PM - Maybe read something or journal your thoughts 📖
+9:30 PM - Quick meditation (trust the process) 🌙
+10:00 PM - Time to crash! 💫`
+            },
+            adult: {
+                keywords: ["adult", "working", "millennial", "professional", "20", "25", "30", "35", "40", "45", "50", "55", "60"],
+                response: `✨ Adult Sleep Guide (Because adulting is hard):
+
+• Bedtime: 10:00 PM - 11:00 PM
+• Wake time: 6:00 AM - 7:00 AM
+• Total sleep needed: 7-9 hours
+
+Evening Routine:
+9:00 PM - Digital detox (the emails can wait) 📱
+9:30 PM - Quick yoga/stretch (your back will thank you) 🧘‍♀️
+10:00 PM - Self-care time (read/meditate) 📚
+10:30 PM - Skincare routine maybe? 🌙
+11:00 PM - Sweet dreams! ✨`
+            },
+            greetings: {
+                keywords: ["hi", "hello", "hey", "sup", "yo"],
+                response: "Heyyy! 👋 I'm RiseWise, your sleep bestie! Tell me your age or vibe, and I'll hook you up with the perfect sleep schedule! ✨"
+            },
+            about: {
+                keywords: ["who are you", "what are you", "what do you do", "introduce"],
+                response: "I'm RiseWise, your personal sleep coach! 🌟 I help people get their sleep schedule on point! Just tell me your age or vibe, and I'll create a custom routine for you! 💫"
+            }
+        };
+
+        function findResponse(message) {
+            message = message.toLowerCase();
+            
+            // Check for age numbers first
+            const age = parseInt(message.match(/\d+/));
+            if (age) {
+                if (age >= 13 && age <= 17) return botResponses.teen.response;
+                if (age >= 18 && age <= 64) return botResponses.adult.response;
+            }
+
+            // Check for keywords
+            for (let category in botResponses) {
+                if (botResponses[category].keywords) {
+                    for (let keyword of botResponses[category].keywords) {
+                        if (message.includes(keyword)) {
+                            return botResponses[category].response;
+                        }
+                    }
+                }
+            }
+
+            // Default response if no matches
+            return "Hey bestie! 🤔 Not sure what you mean. Can you tell me your age or if you're a teen/adult? I'll hook you up with the perfect sleep routine! ✨";
+        }
+
+        function addMessage(message, isUser = false) {
+            const chatBody = document.getElementById('chatBody');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+            messageDiv.textContent = message;
+            chatBody.appendChild(messageDiv);
+            chatBody.scrollTop = chatBody.scrollHeight;
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('userInput');
+            const message = input.value.trim();
+            
+            if (message) {
+                addMessage(message, true);
+                const response = findResponse(message);
+                setTimeout(() => addMessage(response), 500);
+                input.value = '';
+            }
+        }
+
+        // Initial greeting
+        window.onload = () => {
+            setTimeout(() => {
+                addMessage("Heyyy bestie! 👋 I'm RiseWise, your sleep routine coach! Tell me your age or if you're a teen/adult, and I'll hook you up with the perfect sleep schedule! ✨");
+            }, 500);
+        };
+    </script>
+</body>
+</html>
